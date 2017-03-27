@@ -1,0 +1,2 @@
+folder: /path/to/save/the/result
+map: http://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}
