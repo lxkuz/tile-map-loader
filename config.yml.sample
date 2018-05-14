@@ -1,2 +1,11 @@
-folder: /path/to/save/the/result
-map: http://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}
+folder: .../tiles
+map: https://a.tile.openstreetmap.org/{z}/{x}/{y}.png
+min_zoom: 13
+max_zoom: 14
+border:
+  -
+    - 56.82036
+    - 60.62228
+  -
+    - 56.80976
+    - 60.65494

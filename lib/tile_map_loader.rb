@@ -7,10 +7,11 @@ class TileMapLoader
     @config = YAML.load_file config_path
     @folder_path = @config["folder"] || "./map"
     @map_path = @config["map"]
-    lat, lng = @config["lat"], @config["lng"]
 
-
-    @borders = {1 => [[0, 0], [1, 1]]} #TODO temp
+    @borders = compile_borders(
+      @config["min_zoom"], @config["max_zoom"],
+      @config["border"][0],  @config["border"][1]
+    )
 
     @borders.each do |z, xy|
       startPoint = xy.first
@@ -27,15 +28,29 @@ class TileMapLoader
 
   private
 
-  def save_tile content, x, y, z
-    puts "saving: #{z}/#{x}/#{y}.png"
-    file_name = "#{y}.png"
-    folder_name = "#{@folder_path}/#{z}/#{x}"
-    FileUtils.mkdir_p folder_name
-    File.write("#{folder_name}/#{file_name}", content)
+  def compile_borders(min_zoom, max_zoom, left_top_point, right_bottom_point)
+    zoom = max_zoom
+    borders = {}
+    while zoom >= min_zoom
+      borders[zoom] = [
+        deg2num(left_top_point, zoom),
+        deg2num(right_bottom_point, zoom)
+      ]
+      zoom -= 1
+    end
+    borders
   end
 
-  def load_tile x, y, z
+  def deg2num(point, zoom)
+    lat_deg, lon_deg = point
+    lat_rad = lat_deg * Math::PI / 180
+    n = 2.0 ** zoom
+    xtile = ((lon_deg + 180.0) / 360.0 * n).to_i
+    ytile = ((1.0 - Math.log(Math.tan(lat_rad) + (1 / Math.cos(lat_rad))) / Math::PI) / 2.0 * n).to_i
+    [xtile, ytile]
+  end
+
+  def load_tile(x, y, z)
     puts "loading: #{z}/#{x}/#{y}.png"
     url = @map_path.sub("{x}", x.to_s).sub("{y}", y.to_s).sub("{z}", z.to_s)
     uri = URI(url)
@@ -43,13 +58,11 @@ class TileMapLoader
     save_tile res.body, x, y, z
   end
 
-  # TODO add support of original geocoords
-  # def long2tile(lon,zoom) 
-  #   (( lon + 180 ) / 360 * Math.pow( 2, zoom )).floor
-  # end
-
-  # def lat2tile(lat,zoom)
-  #   ((1 - Math.log(Math.tan(lat * Math::PI/180) +
-  #    1 / Math.cos(lat*Math::PI/180)) / Math::PI) / 2 * Math.pow(2,zoom)).floor
-  # end
+  def save_tile(content, x, y, z)
+    puts "saving: #{z}/#{x}/#{y}.png"
+    file_name = "#{y}.png"
+    folder_name = "#{@folder_path}/#{z}/#{x}"
+    FileUtils.mkdir_p folder_name
+    File.write("#{folder_name}/#{file_name}", content)
+  end
 end
